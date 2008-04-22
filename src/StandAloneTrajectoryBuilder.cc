@@ -1,8 +1,8 @@
 /** \class StandAloneTrajectoryBuilder
  *  Concrete class for the STA Muon reco 
  *
- *  $Date: 2007/02/16 13:31:23 $
- *  $Revision: 1.38 $
+ *  $Date: 2007/04/27 14:55:16 $
+ *  $Revision: 1.39 $
  *  \author R. Bellan - INFN Torino <riccardo.bellan@cern.ch>
  *  \author Stefano Lacaprara - INFN Legnaro
  */
@@ -30,6 +30,9 @@
 #include "TrackingTools/TrajectoryState/interface/TrajectoryStateOnSurface.h"
 #include "TrackingTools/TrajectoryState/interface/FreeTrajectoryState.h"
 #include "TrackingTools/DetLayers/interface/DetLayer.h"
+#include "TrackingTools/PatternTools/interface/TrajectoryFitter.h"
+#include "TrackingTools/Records/interface/TrackingComponentsRecord.h"
+#include "TrackingTools/TrackFitters/interface/TrajectoryStateWithArbitraryError.h"
 #include "Geometry/CommonDetUnit/interface/GeomDet.h"
 
 using namespace edm;
@@ -192,7 +195,7 @@ StandAloneMuonTrajectoryBuilder::trajectories(const TrajectorySeed& seed){
       tsTransform.persistentState( tsosAfterRefit, trajectoryFW.lastMeasurement().recHit()->geographicalId().rawId());
     
     edm::OwnVector<TrackingRecHit> recHitsContainer; // FIXME!!
-    TrajectorySeed fwFit(*seedTSOS,recHitsContainer,alongMomentum);
+    TrajectorySeed fwFit(*seedTSOS,recHitsContainer,oppositeToMomentum);
 
     seedForBW = fwFit;
   }
@@ -223,9 +226,9 @@ StandAloneMuonTrajectoryBuilder::trajectories(const TrajectorySeed& seed){
   
   // The trajectory is good if there are at least 2 chamber used in total and at
   // least 1 "tracking" (DT or CSC)
-  if (  bwfilter()->getTotalChamberUsed() >= 2 && 
-	((bwfilter()->getDTChamberUsed() + bwfilter()->getCSCChamberUsed()) >0 ||
-	 bwfilter()->onlyRPC()) ) {
+  if ( bwfilter()->getTotalChamberUsed() >= 2 && 
+       ((bwfilter()->getDTChamberUsed() + bwfilter()->getCSCChamberUsed()) >0 ||
+	bwfilter()->onlyRPC()) ) {
     
     if (doSmoothing && !trajectoryBW.empty()){
       pair<bool,Trajectory> smoothingResult = smoother()->smooth(trajectoryBW);
@@ -237,8 +240,34 @@ StandAloneMuonTrajectoryBuilder::trajectories(const TrajectorySeed& seed){
       else
 	trajectoryContainer.push_back(new Trajectory(trajectoryBW));
     }
-    else
-      trajectoryContainer.push_back(new Trajectory(trajectoryBW));
+    else{
+      bool doIt = false;
+      
+      edm::ESHandle<TrajectoryFitter> kfFitter;
+      // theService->eventSetup().get<TrackingComponentsRecord>().get("KFFitterSTA",kfFitter);
+      // vector<Trajectory> refitted = kfFitter->fit(trajectoryBW);
+
+      theService->eventSetup().get<TrackingComponentsRecord>().get("KFFitterSmootherSTA",kfFitter);
+      TrajectoryMeasurement lastTM = trajectoryBW.lastMeasurement();
+      //TrajectoryStateOnSurface firstTsos = TrajectoryStateWithArbitraryError()(lastTM.updatedState());
+      TrajectoryStateOnSurface firstTsos = lastTM.updatedState();
+      TransientTrackingRecHit::ConstRecHitContainer trajRH = trajectoryBW.recHits();
+      reverse(trajRH.begin(),trajRH.end());
+      vector<Trajectory> refitted = kfFitter->fit(trajectoryBW.seed(), trajRH, firstTsos);
+      
+      
+      if(!refitted.empty() && doIt){
+	LogTrace(metname) << "Before KF Refit";
+	LogTrace(metname) << debug.dumpTSOS(trajectoryBW.lastMeasurement().updatedState());
+	LogTrace(metname) << "After KF Refit";
+	LogTrace(metname) << debug.dumpTSOS(refitted.front().lastMeasurement().updatedState());
+	trajectoryContainer.push_back(new Trajectory(refitted.front()));
+      }
+	else{
+	  LogTrace(metname) << "The KF refit failed: load unrefitted trajectory";
+	  trajectoryContainer.push_back(new Trajectory(trajectoryBW));
+	}
+    }
     
     LogTrace(metname)<< "Trajectory saved" << endl;
     
@@ -287,7 +316,7 @@ StandAloneMuonTrajectoryBuilder::propagateTheSeedTSOS(const TrajectorySeed& seed
   LogTrace(metname)<< "Seed's id: "<< endl ;
   LogTrace(metname) << debug.dumpMuonId(seedDetId);
   
-  // Get the layer on which the seed relies
+  // Get the layer on which the seed relies on
   const DetLayer *initialLayer = theService->detLayerGeometry()->idToLayer( seedDetId );
 
   LogTrace(metname)<< "Seed's detLayer: "<< endl ;
