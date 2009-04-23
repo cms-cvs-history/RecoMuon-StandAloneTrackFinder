@@ -1,8 +1,8 @@
 /** \class StandAloneTrajectoryBuilder
  *  Concrete class for the STA Muon reco 
  *
- *  $Date: 2008/08/07 12:31:03 $
- *  $Revision: 1.41 $
+ *  $Date: 2009/04/22 09:50:02 $
+ *  $Revision: 1.41.2.1 $
  *  \author R. Bellan - INFN Torino <riccardo.bellan@cern.ch>
  *  \author Stefano Lacaprara - INFN Legnaro
  *  \author D. Trocino - INFN Torino <daniele.trocino@to.infn.it>
@@ -178,6 +178,8 @@ StandAloneMuonTrajectoryBuilder::trajectories(const TrajectorySeed& seed){
   }
   else {
     LogTrace(metname) << "Compatibility NOT satisfied after Forward filter! No trajectory will be loaded!" << endl;
+    LogTrace(metname) << "Total chambers: " << filter()->getTotalCompatibleChambers() << "; DT: " 
+		      << filter()->getDTCompatibleChambers() << "; CSC: " << filter()->getCSCCompatibleChambers() << endl;
     return trajectoryContainer; 
   }
 
