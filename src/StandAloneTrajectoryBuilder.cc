@@ -1,8 +1,8 @@
 /** \class StandAloneTrajectoryBuilder
  *  Concrete class for the STA Muon reco 
  *
- *  $Date: 2009/04/22 09:50:02 $
- *  $Revision: 1.41.2.1 $
+ *  $Date: 2009/04/23 15:32:40 $
+ *  $Revision: 1.41.2.2 $
  *  \author R. Bellan - INFN Torino <riccardo.bellan@cern.ch>
  *  \author Stefano Lacaprara - INFN Legnaro
  *  \author D. Trocino - INFN Torino <daniele.trocino@to.infn.it>
@@ -161,7 +161,8 @@ StandAloneMuonTrajectoryBuilder::trajectories(const TrajectorySeed& seed){
   filter()->refit(inputFromSeed.second,inputFromSeed.first,trajectoryFW);
 
   // Get the last TSOS
-  TrajectoryStateOnSurface tsosAfterRefit = filter()->lastUpdatedTSOS();
+  //  TrajectoryStateOnSurface tsosAfterRefit = filter()->lastUpdatedTSOS();     // this is the last UPDATED TSOS
+  TrajectoryStateOnSurface tsosAfterRefit = filter()->lastCompatibleTSOS();     // this is the last COMPATIBLE TSOS
 
   LogTrace(metname) << "StandAloneMuonTrajectoryBuilder filter output " << endl;
   LogTrace(metname) << debug.dumpTSOS(tsosAfterRefit);
@@ -298,8 +299,13 @@ StandAloneMuonTrajectoryBuilder::trajectories(const TrajectorySeed& seed){
     // above pattern.
     
   }
-  else
-    LogTrace(metname)<< "Trajectory NOT saved" << endl;
+
+  else {
+    LogTrace(metname) << "Compatibility NOT satisfied after Backward filter!" << endl;
+    LogTrace(metname) << "The result of Forward filter will be loaded!" << endl;
+
+    trajectoryContainer.push_back(new Trajectory(trajectoryFW));
+  }
 
   return trajectoryContainer;
 }
