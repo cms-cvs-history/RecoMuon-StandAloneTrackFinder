@@ -4,8 +4,8 @@
 /** \class StandAloneMuonFilter
  *  The inward-outward fitter (starts from seed state).
  *
- *  $Date: 2009/04/07 15:43:02 $
- *  $Revision: 1.2 $
+ *  $Date: 2009/04/07 16:49:42 $
+ *  $Revision: 1.3 $
  *  \author R. Bellan - INFN Torino <riccardo.bellan@cern.ch>
  *          D. Trocino - INFN Torino <daniele.trocino@to.infn.it>
  */
@@ -47,6 +47,9 @@ class StandAloneMuonFilter {
   /// the last but one free trajectory state
   FreeTrajectoryState lastButOneUpdatedFTS() const {return *theLastButOneUpdatedTSOS.freeTrajectoryState();}
   
+  /// the Trajectory state on the last compatible surface
+  TrajectoryStateOnSurface lastCompatibleTSOS() const {return theLastCompatibleTSOS;}
+
   /// the Trajectory state on the last surface of the fitting
   TrajectoryStateOnSurface lastUpdatedTSOS() const {return theLastUpdatedTSOS;}
 
@@ -105,6 +108,9 @@ protected:
 
 private:
 
+  /// Set the last compatible TSOS
+  void setLastCompatibleTSOS(TrajectoryStateOnSurface tsos) { theLastCompatibleTSOS = tsos;}
+  
   /// Set the last TSOS
   void setLastUpdatedTSOS(TrajectoryStateOnSurface tsos) { theLastUpdatedTSOS = tsos;}
   
@@ -127,6 +133,8 @@ private:
   std::vector<TrajectoryMeasurement>
   findBestMeasurements(const DetLayer * layer, const TrajectoryStateOnSurface & tsos);
   
+  /// the trajectory state on the last compatible surface
+  TrajectoryStateOnSurface theLastCompatibleTSOS;
   /// the trajectory state on the last available surface
   TrajectoryStateOnSurface theLastUpdatedTSOS;
   /// the trajectory state on the last but one available surface

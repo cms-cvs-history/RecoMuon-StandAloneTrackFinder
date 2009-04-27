@@ -1,8 +1,8 @@
 /** \class StandAloneMuonFilter
  *  The inward-outward fitter (starts from seed state).
  *
- *  $Date: 2009/04/23 10:46:25 $
- *  $Revision: 1.5 $
+ *  $Date: 2009/04/23 15:32:58 $
+ *  $Revision: 1.4.2.1 $
  *  \author R. Bellan - INFN Torino <riccardo.bellan@cern.ch>
  *          D. Trocino - INFN Torino <daniele.trocino@to.infn.it>
  */
@@ -124,7 +124,7 @@ void StandAloneMuonFilter::reset(){
   totalChambers = dtChambers = cscChambers = rpcChambers = 0;
   totalCompatibleChambers = dtCompatibleChambers = cscCompatibleChambers = rpcCompatibleChambers = 0;
   
-  theLastUpdatedTSOS =  theLastButOneUpdatedTSOS = TrajectoryStateOnSurface();
+  theLastCompatibleTSOS = theLastUpdatedTSOS = theLastButOneUpdatedTSOS = TrajectoryStateOnSurface();
 
   theMuonUpdator->makeFirstTime();
 
@@ -160,7 +160,6 @@ void StandAloneMuonFilter::incrementCompatibleChamberCounters(const DetLayer *la
       << "Unrecognized module type in incrementCompatibleChamberCounters";
   
   totalCompatibleChambers++;
-
 }
 
 
@@ -200,7 +199,7 @@ void StandAloneMuonFilter::refit(const TrajectoryStateOnSurface& initialTSOS,
   LogTrace(metname) << "Starting the refit"<<endl; 
 
   // this is the most outward TSOS (updated or predicted) onto a DetLayer
-  TrajectoryStateOnSurface lastTSOS = theLastUpdatedTSOS = theLastButOneUpdatedTSOS = initialTSOS;
+  TrajectoryStateOnSurface lastTSOS = theLastCompatibleTSOS = theLastUpdatedTSOS = theLastButOneUpdatedTSOS = initialTSOS;
   
   double eta0 = initialTSOS.freeTrajectoryState()->momentum().eta();
   vector<const DetLayer*> detLayers = compatibleLayers(initialLayer,*initialTSOS.freeTrajectoryState(),
@@ -347,5 +346,9 @@ bool StandAloneMuonFilter::update(const DetLayer * layer,
     theLastButOneUpdatedTSOS = theLastUpdatedTSOS;
     theLastUpdatedTSOS = result.second;
   }
+
+  if(result.second.isValid())
+    theLastCompatibleTSOS = result.second;
+
   return result.first;
 }
