@@ -16,7 +16,6 @@
 <use name="TrackingTools/TrackFitters">
 <use name="TrackingTools/TrackRefitter">
 <use name="TrackingTools/TrajectoryState">
-
 <export>
   <use name="DataFormats/TrajectorySeed">
   <use name="DataFormats/TrajectoryState">
