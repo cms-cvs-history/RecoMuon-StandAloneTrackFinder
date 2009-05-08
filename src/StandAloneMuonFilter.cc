@@ -1,8 +1,8 @@
 /** \class StandAloneMuonFilter
  *  The inward-outward fitter (starts from seed state).
  *
- *  $Date: 2009/04/23 15:32:58 $
- *  $Revision: 1.4.2.1 $
+ *  $Date: 2009/04/27 17:59:20 $
+ *  $Revision: 1.4.2.2 $
  *  \author R. Bellan - INFN Torino <riccardo.bellan@cern.ch>
  *          D. Trocino - INFN Torino <daniele.trocino@to.infn.it>
  */
@@ -23,6 +23,10 @@
 #include "TrackingTools/GeomPropagators/interface/Propagator.h"
 
 #include "TrackingTools/KalmanUpdators/interface/Chi2MeasurementEstimator.h"
+
+#include "DataFormats/TrackingRecHit/interface/InvalidTrackingRecHit.h"
+#include "TrackingTools/TransientTrackingRecHit/interface/TransientTrackingRecHitByValue.h"
+#include "TrackingTools/PatternTools/interface/Trajectory.h"
 
 #include "TrackingTools/TrajectoryState/interface/FreeTrajectoryState.h"
 #include "TrackingTools/PatternTools/interface/TrajectoryMeasurement.h"
@@ -351,4 +355,22 @@ bool StandAloneMuonFilter::update(const DetLayer * layer,
     theLastCompatibleTSOS = result.second;
 
   return result.first;
+}
+
+
+void StandAloneMuonFilter::createDefaultTrajectory(const Trajectory & oldTraj, Trajectory & defTraj) {
+
+  Trajectory::DataContainer oldMeas = oldTraj.measurements();
+  defTraj.reserve(oldMeas.size());
+
+  for (Trajectory::DataContainer::const_iterator itm = oldMeas.begin(); itm != oldMeas.end(); itm++) {
+    if( !(*itm).recHit()->isValid() )
+      defTraj.push( *itm, (*itm).estimate() );
+    else {
+      InvalidTrackingRecHit invRh( (*itm).recHit()->geographicalId(), TrackingRecHit::bad );
+      TransientTrackingRecHit::RecHitPointer invRhPtr = TransientTrackingRecHitByValue<InvalidTrackingRecHit>::build( (*itm).recHit()->det(), &invRh);
+      TrajectoryMeasurement invRhMeas( (*itm).forwardPredictedState(), (*itm).updatedState(), invRhPtr, (*itm).estimate(), (*itm).layer() );
+      defTraj.push( invRhMeas, (*itm).estimate() );	  
+    }
+  }
 }

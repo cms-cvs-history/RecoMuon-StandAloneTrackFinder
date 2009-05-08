@@ -4,8 +4,8 @@
 /** \class StandAloneMuonFilter
  *  The inward-outward fitter (starts from seed state).
  *
- *  $Date: 2009/04/07 16:49:42 $
- *  $Revision: 1.3 $
+ *  $Date: 2009/04/27 18:00:50 $
+ *  $Revision: 1.3.2.1 $
  *  \author R. Bellan - INFN Torino <riccardo.bellan@cern.ch>
  *          D. Trocino - INFN Torino <daniele.trocino@to.infn.it>
  */
@@ -102,6 +102,8 @@ class StandAloneMuonFilter {
   
   /// access at the muon updator
   MuonTrajectoryUpdator *updator() const {return theMuonUpdator;}
+
+  void createDefaultTrajectory(const Trajectory &, Trajectory &);
 
 
 protected:
